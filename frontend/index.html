@@ -1,0 +1,179 @@
+ 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RailAI — Railway Employee Help Desk</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+
+  <!-- ================================================================
+    SIDEBAR — left panel showing system info and knowledge base stats
+  ================================================================ -->
+  <aside class="sidebar">
+
+    <!-- Logo / branding -->
+    <div class="sidebar-header">
+      <div class="logo">
+        <span class="logo-icon">🚂</span>
+        <div>
+          <h1>RailAI</h1>
+          <p>Railway Help Desk</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Department selector — populated dynamically by app.js calling GET /departments -->
+    <div class="sidebar-section">
+      <label class="section-label" for="department-select">FILTER BY DEPARTMENT</label>
+      <select id="department-select" class="dept-select">
+        <!-- Options are injected here by app.js on page load -->
+        <option value="">Loading...</option>
+      </select>
+    </div>
+
+    <!-- Knowledge base statistics — populated by GET /documents -->
+    <div class="sidebar-section">
+      <label class="section-label">KNOWLEDGE BASE</label>
+      <div id="kb-stats" class="kb-stats">
+        <!-- Stats cards are injected here by app.js -->
+        <div class="stat-card">
+          <span class="stat-value" id="stat-chunks">—</span>
+          <span class="stat-label">Total Chunks</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-value" id="stat-docs">—</span>
+          <span class="stat-label">Documents</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Indexed documents list — populated by GET /documents -->
+    <div class="sidebar-section docs-section">
+      <label class="section-label">INDEXED DOCUMENTS</label>
+      <div id="docs-list" class="docs-list">
+        <!-- Document entries injected by app.js -->
+      </div>
+    </div>
+
+    <!-- Action buttons -->
+    <div class="sidebar-section">
+      <label class="section-label">ACTIONS</label>
+
+      <!-- Upload PDF button — triggers hidden file input -->
+      <button class="action-btn" onclick="document.getElementById('pdf-upload-input').click()">
+        📎 Upload PDF
+      </button>
+      <!-- Hidden file input — only accepts PDFs -->
+      <input
+        type="file"
+        id="pdf-upload-input"
+        accept=".pdf"
+        style="display:none"
+        onchange="handleUpload(this)"
+      />
+
+      <!-- Re-index button — calls POST /reindex -->
+      <button class="action-btn" id="reindex-btn" onclick="handleReindex()">
+        🔄 Re-index Documents
+      </button>
+
+      <!-- Upload status message -->
+      <div id="upload-status" class="upload-status"></div>
+    </div>
+
+    <!-- Server status indicator at the bottom of sidebar -->
+    <div class="sidebar-footer">
+      <span class="status-dot" id="status-dot"></span>
+      <span id="status-text">Connecting...</span>
+    </div>
+
+  </aside>
+
+  <!-- ================================================================
+    MAIN CHAT AREA — right panel
+  ================================================================ -->
+  <main class="chat-area">
+
+    <!-- Chat header -->
+    <div class="chat-header">
+      <div class="chat-header-info">
+        <h2>AI Assistant</h2>
+        <p id="chat-subtitle">Ask any railway operational or technical question</p>
+      </div>
+      <!-- Shows which department is currently selected -->
+      <div class="dept-badge" id="dept-badge">All Departments</div>
+    </div>
+
+    <!-- Message history — user and AI bubbles are appended here by app.js -->
+    <div class="messages-container" id="messages-container">
+
+      <!-- Welcome message shown on first load -->
+      <div class="welcome-message">
+        <div class="welcome-icon">🚂</div>
+        <h3>Welcome to RailAI</h3>
+        <p>I am your AI-powered internal assistant for Indian Railways.</p>
+        <p>Ask me about signal procedures, electrical systems, operational rules, safety protocols, and more.</p>
+        <div class="example-queries">
+          <p class="example-label">Try asking:</p>
+          <!-- Clicking an example fills the input and sends it automatically -->
+          <button class="example-btn" onclick="sendExample(this)">
+            What should I do if the signal system fails?
+          </button>
+          <button class="example-btn" onclick="sendExample(this)">
+            What are the steps during a train accident?
+          </button>
+          <button class="example-btn" onclick="sendExample(this)">
+            How to maintain digital axle counters?
+          </button>
+          <button class="example-btn" onclick="sendExample(this)">
+            What are OHE maintenance procedures?
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Sources panel — appears below the last AI answer showing referenced documents -->
+    <div class="sources-panel" id="sources-panel" style="display:none">
+      <div class="sources-header">
+        <span>📄 Sources Referenced</span>
+        <button class="sources-close" onclick="document.getElementById('sources-panel').style.display='none'">✕</button>
+      </div>
+      <div id="sources-list" class="sources-list">
+        <!-- Source cards injected by app.js after each AI response -->
+      </div>
+    </div>
+
+    <!-- Input area at the bottom -->
+    <div class="input-area">
+      <div class="input-wrapper">
+        <textarea
+          id="question-input"
+          class="question-input"
+          placeholder="Ask a railway operational or technical question..."
+          rows="1"
+          <!-- Enter sends, Shift+Enter adds a new line -->
+          onkeydown="handleKeyDown(event)"
+          oninput="autoResize(this)"
+        ></textarea>
+        <button class="send-btn" id="send-btn" onclick="sendQuestion()">
+          <!-- Arrow icon — changes to spinner when loading -->
+          <span id="send-icon">➤</span>
+        </button>
+      </div>
+      <p class="input-hint">
+        Press <kbd>Enter</kbd> to send · <kbd>Shift+Enter</kbd> for new line
+      </p>
+    </div>
+
+  </main>
+
+  <!-- app.js must be loaded at the end of body so the DOM is fully
+       rendered before the script tries to access elements by ID. -->
+  <script src="/static/app.js"></script>
+
+</body>
+</html>

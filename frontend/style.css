@@ -1,0 +1,661 @@
+/* =====================================================================
+   style.css — RailAI dark theme
+   Design philosophy: professional dark UI suitable for a railway
+   control-room environment where operators may be staring at screens
+   for long shifts. High contrast, no eye-strain, clear hierarchy.
+===================================================================== */
+
+/* ---- CSS Custom Properties (variables) ---- */
+/* Centralised so changing one value here updates the whole UI. */
+:root {
+  --bg-primary:    #0f1117;   /* Darkest background — main chat area */
+  --bg-secondary:  #1a1d27;   /* Slightly lighter — sidebar */
+  --bg-card:       #22263a;   /* Cards, message bubbles */
+  --bg-input:      #2a2f45;   /* Input fields */
+  --accent:        #4f8ef7;   /* Primary blue — buttons, highlights */
+  --accent-hover:  #3a7ae0;   /* Darker blue on hover */
+  --accent-green:  #2ecc71;   /* Success / status online */
+  --accent-orange: #f39c12;   /* Warning */
+  --text-primary:  #e8eaf6;   /* Main readable text */
+  --text-secondary:#8892b0;   /* Subdued labels, hints */
+  --text-muted:    #4a5568;   /* Very subdued — timestamps, separators */
+  --border:        #2d3251;   /* Subtle border colour */
+  --user-bubble:   #1e3a5f;   /* User message bubble background */
+  --ai-bubble:     #1e2a3a;   /* AI message bubble background */
+  --sidebar-width: 300px;     /* Sidebar fixed width */
+  --radius:        10px;      /* Standard border radius */
+  --font-main:     'Segoe UI', system-ui, sans-serif;
+  --font-mono:     'Consolas', 'Courier New', monospace;
+}
+
+/* ---- Reset & Base ---- */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  overflow: hidden; /* Prevent body scroll — each panel scrolls independently */
+}
+
+body {
+  font-family: var(--font-main);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  display: flex;        /* Side-by-side layout: sidebar | chat area */
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* =====================================================================
+   SIDEBAR
+===================================================================== */
+.sidebar {
+  width: var(--sidebar-width);
+  min-width: var(--sidebar-width);
+  background: var(--bg-secondary);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow-y: auto;   /* Sidebar scrolls independently if content overflows */
+}
+
+/* Scrollbar styling for sidebar */
+.sidebar::-webkit-scrollbar { width: 4px; }
+.sidebar::-webkit-scrollbar-track { background: transparent; }
+.sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+.sidebar-header {
+  padding: 20px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logo-icon {
+  font-size: 28px;
+  /* Subtle glow effect to make the logo pop without being garish */
+  filter: drop-shadow(0 0 8px rgba(79, 142, 247, 0.4));
+}
+
+.logo h1 {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: 1px;
+}
+
+.logo p {
+  font-size: 11px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.sidebar-section {
+  padding: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* Small all-caps label above each sidebar section */
+.section-label {
+  display: block;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  margin-bottom: 10px;
+}
+
+/* Department dropdown */
+.dept-select {
+  width: 100%;
+  background: var(--bg-input);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  font-size: 13px;
+  font-family: var(--font-main);
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.dept-select:focus {
+  border-color: var(--accent);
+}
+
+/* Knowledge base stats — two cards side by side */
+.kb-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.stat-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px;
+  text-align: center;
+}
+
+.stat-value {
+  display: block;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.stat-label {
+  font-size: 10px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+}
+
+/* Documents list */
+.docs-section {
+  flex: 1; /* Takes remaining sidebar space */
+}
+
+.docs-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.doc-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 10px;
+}
+
+.doc-name {
+  font-size: 11px;
+  color: var(--text-primary);
+  word-break: break-all;
+  margin-bottom: 3px;
+}
+
+.doc-meta {
+  font-size: 10px;
+  color: var(--text-secondary);
+}
+
+/* Department colour badges */
+.dept-tag {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  margin-right: 4px;
+}
+
+.dept-signal      { background: #1a3a5c; color: #4f8ef7; }
+.dept-electrical  { background: #3a2a0a; color: #f39c12; }
+.dept-operations  { background: #1a3a1a; color: #2ecc71; }
+.dept-safety      { background: #3a1a1a; color: #e74c3c; }
+.dept-it          { background: #2a1a3a; color: #9b59b6; }
+.dept-announcement{ background: #1a3a3a; color: #1abc9c; }
+
+/* Action buttons */
+.action-btn {
+  width: 100%;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 8px;
+  text-align: left;
+}
+
+.action-btn:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+}
+
+.upload-status {
+  font-size: 12px;
+  color: var(--accent-green);
+  min-height: 18px;
+  padding: 2px 0;
+}
+
+/* Server status indicator at bottom of sidebar */
+.sidebar-footer {
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  border-top: 1px solid var(--border);
+  margin-top: auto;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  flex-shrink: 0;
+}
+
+/* Pulse animation — applied by JS when status is online */
+.status-dot.online {
+  background: var(--accent-green);
+  animation: pulse 2s infinite;
+}
+
+.status-dot.offline {
+  background: #e74c3c;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+
+/* =====================================================================
+   MAIN CHAT AREA
+===================================================================== */
+.chat-area {
+  flex: 1;              /* Takes all remaining width after sidebar */
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* Chat header bar */
+.chat-header {
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg-secondary);
+  flex-shrink: 0;       /* Header never shrinks — always visible */
+}
+
+.chat-header h2 {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.chat-header p {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+/* Shows which department is selected in the header */
+.dept-badge {
+  background: var(--bg-card);
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* Scrollable messages area */
+.messages-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.messages-container::-webkit-scrollbar { width: 4px; }
+.messages-container::-webkit-scrollbar-track { background: transparent; }
+.messages-container::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+/* ---- Welcome screen ---- */
+.welcome-message {
+  text-align: center;
+  padding: 60px 20px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.welcome-icon {
+  font-size: 56px;
+  margin-bottom: 16px;
+  filter: drop-shadow(0 0 12px rgba(79, 142, 247, 0.5));
+}
+
+.welcome-message h3 {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--accent);
+  margin-bottom: 10px;
+}
+
+.welcome-message p {
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+
+.example-queries {
+  margin-top: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.example-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 4px;
+}
+
+.example-btn {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  padding: 10px 16px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-size: 13px;
+  text-align: left;
+  transition: all 0.2s;
+}
+
+.example-btn:hover {
+  border-color: var(--accent);
+  color: var(--text-primary);
+  background: var(--bg-input);
+}
+
+/* ---- Message bubbles ---- */
+.message {
+  display: flex;
+  gap: 12px;
+  max-width: 85%;
+  animation: fadeSlideIn 0.3s ease;
+}
+
+/* User messages align to the right */
+.message.user {
+  align-self: flex-end;
+  flex-direction: row-reverse;
+}
+
+/* AI messages align to the left */
+.message.ai {
+  align-self: flex-start;
+}
+
+/* Avatar circle next to each message */
+.message-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.message.user .message-avatar {
+  background: var(--accent);
+}
+
+.message.ai .message-avatar {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+}
+
+/* The text bubble itself */
+.message-bubble {
+  background: var(--user-bubble);
+  padding: 12px 16px;
+  border-radius: var(--radius);
+  border-top-right-radius: 2px;   /* Square corner on the avatar side */
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.message.ai .message-bubble {
+  background: var(--ai-bubble);
+  border-top-right-radius: var(--radius);
+  border-top-left-radius: 2px;
+}
+
+/* Render newlines and formatting inside AI answers */
+.message-bubble p { margin-bottom: 8px; }
+.message-bubble p:last-child { margin-bottom: 0; }
+.message-bubble strong { color: var(--accent); }
+
+/* Timestamp below each bubble */
+.message-time {
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-top: 4px;
+  padding: 0 4px;
+}
+
+/* Fade + slide up animation for new messages */
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ---- Typing / loading indicator ---- */
+.typing-indicator {
+  display: flex;
+  gap: 12px;
+  align-self: flex-start;
+}
+
+.typing-dots {
+  background: var(--ai-bubble);
+  border-radius: var(--radius);
+  padding: 14px 18px;
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+
+/* Three animated dots to show AI is thinking */
+.typing-dots span {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--text-secondary);
+  animation: typingBounce 1.2s infinite;
+}
+
+.typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+.typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes typingBounce {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+  30%           { transform: translateY(-6px); opacity: 1; }
+}
+
+/* =====================================================================
+   SOURCES PANEL
+===================================================================== */
+.sources-panel {
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border);
+  padding: 12px 24px;
+  flex-shrink: 0;
+  max-height: 140px;
+  overflow-y: auto;
+}
+
+.sources-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 8px;
+}
+
+.sources-close {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 0 4px;
+}
+
+.sources-close:hover { color: var(--text-primary); }
+
+.sources-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Each source reference is a small pill/card */
+.source-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 11px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.source-filename {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.source-page {
+  color: var(--text-secondary);
+}
+
+/* =====================================================================
+   INPUT AREA
+===================================================================== */
+.input-area {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border);
+  background: var(--bg-secondary);
+  flex-shrink: 0;
+}
+
+.input-wrapper {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+}
+
+/* Auto-resizing textarea for the question */
+.question-input {
+  flex: 1;
+  background: var(--bg-input);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  font-size: 14px;
+  font-family: var(--font-main);
+  resize: none;           /* Disable manual resize — auto-resize via JS */
+  outline: none;
+  transition: border-color 0.2s;
+  max-height: 120px;      /* Cap at 4-5 lines */
+  overflow-y: auto;
+  line-height: 1.5;
+}
+
+.question-input:focus {
+  border-color: var(--accent);
+}
+
+.question-input::placeholder {
+  color: var(--text-muted);
+}
+
+/* Send button — circle with arrow icon */
+.send-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: white;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+
+.send-btn:hover:not(:disabled) {
+  background: var(--accent-hover);
+  transform: scale(1.05);
+}
+
+.send-btn:disabled {
+  background: var(--text-muted);
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Spinning loader inside the send button while waiting for AI response */
+.spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.input-hint {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 6px;
+}
+
+.input-hint kbd {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 1px 5px;
+  font-size: 10px;
+  font-family: var(--font-mono);
+}

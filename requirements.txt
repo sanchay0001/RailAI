@@ -1,0 +1,38 @@
+# ===================== Web Framework =====================
+fastapi==0.115.0          # Core backend framework — handles all API routes
+uvicorn[standard]==0.30.6 # ASGI server that actually runs FastAPI
+
+# ===================== RAG / LangChain =====================
+# IMPORTANT: all langchain-* packages below MUST stay on the same major
+# generation (the "1.x" line). Mixing an old langchain-groq (0.2.x, built
+# for langchain 0.3.x) with langchain 1.3.x causes a dependency conflict.
+langchain==1.3.11                 # Core LangChain orchestration library
+langchain-community==0.4.2        # Community document loaders (PyPDFLoader etc.)
+langchain-text-splitters==1.1.2   # Text chunking utilities (RecursiveCharacterTextSplitter)
+langchain-groq==1.1.3              # Groq LLM wrapper for LangChain (1.x line, matches langchain 1.x)
+langchain-huggingface==1.2.2       # HuggingFace embeddings wrapper (1.x line, matches langchain 1.x)
+
+# ===================== Vector Database =====================
+chromadb==1.3.7            # Local vector database for storing embeddings
+langchain-chroma==1.1.0    # Official LangChain integration package for Chroma (1.x line)
+
+# ===================== Embeddings =====================
+sentence-transformers==3.1.1   # Provides the embedding model (all-MiniLM-L6-v2)
+
+# ===================== PDF Processing =====================
+pypdf==5.9.0                # Used internally by LangChain's PyPDFLoader to read PDF text
+
+# ===================== Groq LLM Client =====================
+groq==0.37.1                 # Official Groq API client (used indirectly via langchain-groq)
+
+# ===================== Utilities =====================
+python-dotenv==1.0.1        # Loads GROQ_API_KEY etc. from a local .env file
+python-multipart==0.0.9     # Required by FastAPI to handle file uploads (PDF upload endpoint)
+pydantic==2.9.2              # Data validation for FastAPI request/response models
+
+# ===================== Testing =====================
+pytest==8.3.3                # Test runner used in CI pipeline
+httpx==0.27.2                 # Required by FastAPI's TestClient for API testing
+
+# ===================== Linting (CI only) =====================
+flake8==7.1.1                 # Code style checker used in GitHub Actions CI

@@ -1,0 +1,66 @@
+# render.yaml
+# ------------
+# Infrastructure-as-code for Render. When you connect your GitHub repo
+# to Render, it reads this file to know how to build and run your app.
+# This means your deployment config lives IN the repo alongside your code
+# (not buried in a web dashboard), so it's versioned and reproducible.
+
+services:
+  # Define one web service — this is your FastAPI backend + frontend combined.
+  - type: web
+    name: railai
+    # runtime: python tells Render to use its Python buildpack, which
+    # automatically sets up a virtualenv and knows to use pip.
+    runtime: python
+
+    # buildCommand runs ONCE during deployment, before the app starts.
+    # We install all Python dependencies here.
+    # --no-cache-dir keeps the build layer small (Render charges for disk).
+    buildCommand: pip install --no-cache-dir -r requirements.txt
+
+    # startCommand runs every time the service starts or restarts.
+    # We run uvicorn from the backend/ directory.
+    #   main:app          — the FastAPI app object inside backend/main.py
+    #   --host 0.0.0.0    — listen on all network interfaces, not just
+    #                        localhost. REQUIRED on Render — without this
+    #                        Render's load balancer can't reach your app.
+    #   --port $PORT      — $PORT is injected by Render automatically.
+    #                        Never hardcode 8000 here — Render assigns ports
+    #                        dynamically and will reject a hardcoded port.
+    startCommand: cd backend && uvicorn main:app --host 0.0.0.0 --port $PORT
+
+    # The folder Render looks in for your code.
+    # "." means the repo root, which is correct since requirements.txt
+    # and the backend/ folder are both at the root level.
+    rootDir: .
+
+    # envVars defines environment variables available to the running app.
+    # Variables marked sync: false must be set manually in the Render
+    # dashboard — they are NOT committed to the repo (keeping secrets safe).
+    envVars:
+      - key: GROQ_API_KEY
+        # sync: false means "this value is secret — set it in the dashboard,
+        # don't put it in this file". Render will show an empty field for
+        # this variable in the dashboard for you to fill in.
+        sync: false
+
+      # PYTHON_VERSION tells Render's buildpack exactly which Python to use.
+      - key: PYTHON_VERSION
+        value: "3.11.0"
+
+    # disk mounts a persistent volume that SURVIVES service restarts.
+    # Without this, Render's ephemeral filesystem wipes chroma_db/ every
+    # time the service restarts (which happens on every new deploy and
+    # also periodically on the free tier). With the disk, your 7,966
+    # embedded chunks stay indexed permanently.
+    disk:
+      # name is just a label shown in the Render dashboard.
+      name: railai-data
+      # mountPath is where the disk appears in the container filesystem.
+      # We mount it at the project root so both data/ and chroma_db/ are
+      # on the persistent disk. The startup event in main.py handles
+      # re-indexing if the disk is fresh (first deploy).
+      mountPath: /opt/render/project/src
+      # sizeGB: 1 gives us 1GB of persistent storage (~$0.25/month).
+      # Your PDFs + ChromaDB index together should be well under 500MB.
+      sizeGB: 1

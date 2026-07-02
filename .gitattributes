@@ -1,0 +1,14 @@
+# This file tells Git to store all .pdf files using Git LFS (Large File
+# Storage) instead of committing their raw bytes directly into the repo's
+# history. LFS stores a small "pointer" file in git and keeps the actual
+# binary content in a separate LFS storage backend.
+#
+# Why this matters for RailAI: some of your PDFs (e.g. the 41MB ACTM file
+# and the 24MB Electrical Reference Manual) are large. Without LFS, every
+# clone of this repo would have to download the full PDF history, and
+# GitHub's per-file soft limits (recommended <50MB) would eventually bite
+# you as more PDFs are added.
+#
+# "filter=lfs diff=lfs merge=lfs -text" is the standard incantation Git LFS
+# uses to intercept these files during add/commit/checkout operations.
+*.pdf filter=lfs diff=lfs merge=lfs -text
