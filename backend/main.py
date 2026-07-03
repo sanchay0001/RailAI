@@ -13,8 +13,8 @@ The --reload flag means uvicorn auto-restarts when you save any .py file,
 which is useful during development.
 """
 
+import asyncio
 import shutil
-from pathlib import Path
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException, UploadFile, File
@@ -30,42 +30,67 @@ import rag_pipeline
 
 
 # ---------------------------------------------------------------------------
-# LIFESPAN — replaces the deprecated @app.on_event("startup") pattern.
+# LIFESPAN — modern FastAPI startup/shutdown pattern (replaces on_event).
 # ---------------------------------------------------------------------------
-# asynccontextmanager turns this function into a context manager that
-# FastAPI calls automatically. Code BEFORE "yield" runs at startup;
-# code AFTER "yield" (if any) runs at shutdown. This is the modern
-# FastAPI pattern for startup/shutdown logic as of FastAPI 0.93+.
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """
-    Runs automatically when FastAPI starts (both locally and on Render).
-    Scans data/ for any PDFs not yet in ChromaDB and indexes them.
+    FastAPI calls everything BEFORE yield at startup, and everything
+    AFTER yield at shutdown.
 
-    On Render with a persistent disk: this does nothing after the first
-    deploy because all PDFs are already indexed and metadata.json records
-    their hashes — so the hash check skips everything and startup is fast.
+    The key fix for Render: we do NOT run indexing synchronously here.
+    If we did, Render's port-binding timeout (60 seconds) would expire
+    before uvicorn finishes embedding 7,966 chunks, and the deploy would
+    fail with "No open ports detected".
 
-    On a fresh Render deploy (or after clearing chroma_db): this fully
-    re-indexes everything — the intended self-healing behaviour so you
-    never have to manually trigger indexing on the server.
+    Instead we fire the indexing off as a background asyncio task. The
+    server binds to the port IMMEDIATELY, Render sees it as healthy, and
+    indexing runs quietly in the background. Since we're committing the
+    pre-built chroma_db/ to the repo, the background task will find
+    everything already indexed and finish in under 2 seconds anyway.
     """
-    print("🚀 RailAI starting up — checking knowledge base...")
-    try:
-        new_chunks = document_processor.process_all_documents()
-        if new_chunks:
-            vector_store.add_chunks_to_store(new_chunks)
-            print(f"✅ Startup indexed {len(new_chunks)} new chunks.")
-        else:
-            total = vector_store.get_total_indexed_chunk_count()
-            print(f"✅ Knowledge base already up to date ({total} chunks ready).")
-    except Exception as e:
-        # Catch but don't crash on startup errors — the server should
-        # still start even if indexing fails, so /health can report the
-        # problem rather than the whole process dying silently.
-        print(f"⚠️  Startup indexing error: {e}")
 
-    yield  # App runs here — everything after yield is shutdown logic
+    async def index_in_background():
+        # Small delay ensures uvicorn has fully bound the port before we
+        # start consuming CPU — avoids any race condition on slow machines.
+        await asyncio.sleep(2)
+        print("🚀 RailAI — checking knowledge base in background...")
+        try:
+            # run_in_executor runs synchronous (blocking) functions in a
+            # thread pool so they don't block the async event loop. Without
+            # this, a long indexing run would freeze the server and make it
+            # unable to respond to any HTTP requests during that time.
+            loop = asyncio.get_event_loop()
+
+            new_chunks = await loop.run_in_executor(
+                None,  # None = use the default ThreadPoolExecutor
+                document_processor.process_all_documents
+            )
+
+            if new_chunks:
+                # add_chunks_to_store takes a positional argument, so we
+                # wrap it in a lambda to pass it cleanly to run_in_executor.
+                await loop.run_in_executor(
+                    None,
+                    lambda: vector_store.add_chunks_to_store(new_chunks)
+                )
+                print(f"✅ Background indexing complete: {len(new_chunks)} new chunks added.")
+            else:
+                total = vector_store.get_total_indexed_chunk_count()
+                print(f"✅ Knowledge base already up to date ({total} chunks ready).")
+
+        except Exception as e:
+            # Log but never crash — a broken index should not kill the
+            # server process. The /health endpoint will report 0 chunks
+            # which makes the problem visible without a total outage.
+            print(f"⚠️  Background indexing error: {e}")
+
+    # asyncio.create_task() schedules index_in_background() to run
+    # concurrently without blocking this function from returning.
+    # The server starts accepting requests immediately after this line.
+    asyncio.create_task(index_in_background())
+
+    yield  # Server is live and handling requests here
 
 
 # ---------------------------------------------------------------------------
@@ -75,13 +100,16 @@ app = FastAPI(
     title="RailAI — Railway Employee Help Desk",
     description="Internal AI assistant for Indian Railways employees.",
     version="1.0.0",
-    # Pass the lifespan context manager here instead of using on_event.
     lifespan=lifespan,
 )
 
 # ---------------------------------------------------------------------------
 # CORS MIDDLEWARE
 # ---------------------------------------------------------------------------
+# CORS (Cross-Origin Resource Sharing) controls which origins (domains) are
+# allowed to call this API from a browser. allow_origins=["*"] permits
+# requests from any domain — safe here since this is an internal tool
+# and all data comes from authenticated Groq API calls anyway.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -93,6 +121,8 @@ app.add_middleware(
 # ---------------------------------------------------------------------------
 # SERVE FRONTEND STATIC FILES
 # ---------------------------------------------------------------------------
+# Mounts the frontend/ folder so FastAPI serves HTML/CSS/JS directly.
+# This means only ONE process is needed on Render — no separate web server.
 FRONTEND_DIR = config.BASE_DIR / "frontend"
 
 app.mount(
@@ -147,8 +177,8 @@ class ReindexResponse(BaseModel):
 @app.get("/")
 async def serve_frontend():
     """
-    Serves the main HTML page. When a user visits the Render URL (or
-    localhost:8000), they get the chat interface — not a raw JSON response.
+    Serves the main HTML page. Visiting the Render URL returns the chat
+    UI, not a raw JSON response.
     """
     return FileResponse(str(FRONTEND_DIR / "index.html"))
 
@@ -156,9 +186,9 @@ async def serve_frontend():
 @app.get("/health")
 async def health_check():
     """
-    Simple health endpoint — useful for Render's health check pings and
-    for quickly verifying the server is alive and the knowledge base has
-    chunks.
+    Health endpoint — used by Render's health check pings and for
+    verifying the server is alive with chunks indexed.
+    Returns 200 when healthy, 503 if the vector store is broken.
     """
     try:
         total_chunks = vector_store.get_total_indexed_chunk_count()
@@ -178,12 +208,13 @@ async def health_check():
 async def get_departments():
     """
     Returns the department list for the frontend dropdown.
-    Called once on page load to populate the selector.
+    Called once on page load — never hardcoded in the HTML.
     """
     departments = [
         {"key": key, "label": label}
         for key, label in config.DEPARTMENTS.items()
     ]
+    # Prepend "All Departments" so employees can search globally.
     return {
         "departments": [{"key": "", "label": "All Departments"}] + departments
     }
@@ -192,7 +223,8 @@ async def get_departments():
 @app.get("/documents")
 async def list_documents():
     """
-    Returns a summary of all indexed documents with chunk counts.
+    Returns a summary of all indexed documents with page and chunk counts.
+    Used by the frontend sidebar to show what's in the knowledge base.
     """
     docs = document_processor.get_indexed_documents_summary()
     total_chunks = vector_store.get_total_indexed_chunk_count()
@@ -206,15 +238,23 @@ async def list_documents():
 @app.post("/chat", response_model=ChatResponse)
 async def chat(request: ChatRequest):
     """
-    The main endpoint — receives a question + optional department and
+    Main endpoint — receives a question + optional department filter,
     returns an AI-generated answer with source references.
+
+    FastAPI automatically validates the request body against ChatRequest:
+      - Rejects questions shorter than 3 chars with 422
+      - Rejects missing question field with 422
     """
     try:
         result = rag_pipeline.answer_question(
             question=request.question,
+            # Pass None if department is empty string (All Departments)
+            # so similarity_search() skips the metadata filter entirely.
             department=request.department if request.department else None,
         )
 
+        # Surface "no documents found" as a 404 so the frontend can
+        # display a clear message instead of showing an empty answer.
         if "error" in result and result["error"] == "no_chunks_found":
             raise HTTPException(
                 status_code=404,
@@ -229,8 +269,11 @@ async def chat(request: ChatRequest):
         )
 
     except HTTPException:
+        # Re-raise HTTP exceptions unchanged — already formatted correctly.
         raise
     except Exception as e:
+        # Catch unexpected errors (Groq API down, ChromaDB issue, etc.)
+        # and return a clean 500 instead of an ugly Python traceback.
         raise HTTPException(
             status_code=500,
             detail=f"Internal error while generating answer: {str(e)}",
@@ -256,6 +299,8 @@ async def upload_document(
                    f"Valid options: {list(config.DEPARTMENTS.keys())}",
         )
 
+    # Save with department prefix so process_all_documents() auto-detects
+    # the department from the filename on next indexing run.
     save_path = config.DATA_DIR / f"{department}_{file.filename}"
 
     with open(save_path, "wb") as f:
@@ -276,7 +321,8 @@ async def upload_document(
 async def reindex():
     """
     Manually triggers a full re-scan of data/ and indexes any new or
-    changed PDFs.
+    changed PDFs. Already-indexed unchanged files are skipped via hash
+    check, so this is safe to call at any time without duplicating data.
     """
     try:
         new_chunks = document_processor.process_all_documents()
