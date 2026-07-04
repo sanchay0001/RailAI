@@ -4,83 +4,83 @@
     "hash": "f819633558d3e97790b962cfcd26136b",
     "num_pages": 536,
     "num_chunks": 1962,
-    "indexed_at": "2026-06-30T15:54:46.824333"
+    "indexed_at": "2026-07-04T08:14:21.641664"
   },
   "electrical_reference_manual.pdf": {
     "department": "electrical",
     "hash": "54bd2232840e9ef9d9a5ed3307c792f7",
     "num_pages": 477,
     "num_chunks": 1415,
-    "indexed_at": "2026-06-30T15:58:35.319020"
+    "indexed_at": "2026-07-04T08:20:44.593579"
   },
   "electrical_traction_distribution_manual.pdf": {
     "department": "electrical",
     "hash": "5bf3367f81dfa35a44c535cd26b3ff9e",
     "num_pages": 78,
     "num_chunks": 154,
-    "indexed_at": "2026-06-30T15:58:38.567684"
+    "indexed_at": "2026-07-04T08:20:55.189657"
   },
   "operations_general_subsidiary_rules.pdf": {
     "department": "operations",
     "hash": "3cd1ae3b5a75db7d17e8ec7ad0a0cb28",
     "num_pages": 453,
     "num_chunks": 1532,
-    "indexed_at": "2026-06-30T15:59:01.103285"
+    "indexed_at": "2026-07-04T08:22:03.778829"
   },
   "operations_model_sop_2018.pdf": {
     "department": "operations",
     "hash": "9a688efb9e4310c5f851881452152703",
     "num_pages": 360,
     "num_chunks": 913,
-    "indexed_at": "2026-06-30T15:59:18.978971"
+    "indexed_at": "2026-07-04T08:22:57.089370"
   },
   "operations_traffic_operating_manual.pdf": {
     "department": "operations",
     "hash": "14aa74fad7c0654cff737478bd70bf6b",
     "num_pages": 162,
     "num_chunks": 653,
-    "indexed_at": "2026-06-30T15:59:21.918693"
+    "indexed_at": "2026-07-04T08:23:06.287579"
   },
   "safety_disaster_management_plan.pdf": {
     "department": "safety",
     "hash": "3bb750ad35c3d059c3a94fa3f96d2e56",
     "num_pages": 75,
     "num_chunks": 233,
-    "indexed_at": "2026-06-30T15:59:22.610348"
+    "indexed_at": "2026-07-04T08:23:08.675695"
   },
   "signal_axle_counter_installation.pdf": {
     "department": "signal",
     "hash": "fcaf6bd81ac52c4353b6d53ed8d88220",
     "num_pages": 83,
     "num_chunks": 178,
-    "indexed_at": "2026-06-30T15:59:24.989138"
+    "indexed_at": "2026-07-04T08:23:17.191451"
   },
   "signal_axle_counter_maintenance.pdf": {
     "department": "signal",
     "hash": "98dfffa42eea2d6ab346b9885d6355e9",
     "num_pages": 79,
     "num_chunks": 171,
-    "indexed_at": "2026-06-30T15:59:25.755177"
+    "indexed_at": "2026-07-04T08:23:20.211622"
   },
   "signal_cable_laying_handbook.pdf": {
     "department": "signal",
     "hash": "f1c44c9c028d5ba5c98852bfa3544e1e",
     "num_pages": 29,
     "num_chunks": 62,
-    "indexed_at": "2026-06-30T15:59:26.422482"
+    "indexed_at": "2026-07-04T08:23:22.473261"
   },
   "signal_engineering_manual_part2.pdf": {
     "department": "signal",
     "hash": "31da6023683693868bd44ef92ecd2355",
     "num_pages": 278,
     "num_chunks": 693,
-    "indexed_at": "2026-06-30T15:59:36.551418"
+    "indexed_at": "2026-07-04T08:23:55.376073"
   },
   "signal_station_working_rules_ch24.pdf": {
     "department": "signal",
     "hash": "9b9823b0f334e3052332cb2fceb82a42",
     "num_pages": 0,
     "num_chunks": 0,
-    "indexed_at": "2026-06-30T15:59:36.566190"
+    "indexed_at": "2026-07-04T08:23:55.454277"
   }
 }
