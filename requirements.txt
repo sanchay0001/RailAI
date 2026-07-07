@@ -35,4 +35,4 @@ httpx==0.27.2                 # Required by FastAPI's TestClient for API testing
 
 # ===================== Linting (CI only) =====================
 flake8==7.1.1                 # Code style checker used in GitHub Actions CI
-langchain-ollama==1.1.0
+langchain-google-genai==2.0.5
