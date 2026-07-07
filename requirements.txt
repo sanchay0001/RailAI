@@ -31,7 +31,7 @@ pydantic==2.9.2              # Data validation for FastAPI request/response mode
 
 # ===================== Testing =====================
 pytest==8.3.3                # Test runner used in CI pipeline
-httpx==0.27.2                 # Required by FastAPI's TestClient for API testing
+httpx==0.28.1             # Required by FastAPI's TestClient for API testing
 
 # ===================== Linting (CI only) =====================
 flake8==7.1.1                 # Code style checker used in GitHub Actions CI
